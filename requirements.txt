@@ -1,0 +1,3 @@
+husky_spider_utils==0.0.7
+loguru==0.7.3
+openai==1.66.3
