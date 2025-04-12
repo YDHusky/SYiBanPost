@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>验证码</title>
+    <link rel="stylesheet" href="https://castatic.fengkongcloud.cn/pr/v1.0.4/style/demo.css">
+</head>
+<body>
+<div id="shumei_captcha_wrapper">验证码加载中...</div>
+
+
+<script src="http://apps.bdimg.com/libs/jquery/1.9.0/jquery.js"></script>
+<script src="https://castatic.fengkongcloud.cn/pr/v1.0.4/smcp.min.js"></script>
+<script>
+    $(function () {
+        var captchaId = 'shumei_captcha_wrapper';
+
+        window._smReadyFuncs = [];
+        window.SMSdk = {
+            onBoxDataReady: function (boxData) { // 非必填
+                console.log('此时拿到的数据为boxData或者boxId', boxData);
+            },
+            ready: function (fn) {
+                fn && _smReadyFuncs.push(fn);
+            }
+        };
+        window._smConf = {
+            organization: 'IY3HadrRSlgwwKWo63gi', // 必填，组织标识，邮件中organization项
+            appId: 'Yiban_Web', // 必填，应用标识，默认传值default，其他应用标识提前联系数美协助定义
+            publicKey: 'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDJ7mRaU7N3VDstwAxCMy2QZFcL/yiEv9+Mr6n2YkX+dWa1O8jvWEi0/+4QGCqIfzry9LdyUnawEDCEcK7tR20GqBYl7hczOE7mv6t9C7tiGuqG++VEOwjjgfNqgrkzp+SuseOI8waN3kUT3Ok1irCcTbJXVwTB4jIK++5gtnZZjwIDAQAB', // 必填，私钥标识，邮件中publicKey项
+            staticHost: 'static.portal101.cn', // 必填, 设置JS-SDK文件域名，建议填写static.portal101.cn
+        };
+
+
+        var url = (function () {
+            var isHttps = 'https:' === document.location.protocol;
+            var protocol = isHttps ? 'https://' : 'http://';
+            var fpJsPath = '/dist/web/v3.0.0/fp.min.js';
+            var url = protocol + _smConf.staticHost + fpJsPath;
+            return url;
+        })();
+
+        function dealSmDeviceId(cb) {
+            var smDeviceId = '';
+            var smDeviceIdReady = false;
+
+            SMSdk.ready(function () {
+                if (SMSdk.getDeviceId) {
+                    smDeviceId = SMSdk.getDeviceId();
+                }
+                if (!smDeviceIdReady) {
+                    smDeviceIdReady = true;
+                    // 执行业务逻辑
+                    cb && cb(smDeviceId);
+                }
+            });
+        }
+
+        var sm = document.createElement('script');
+        var s = document.getElementsByTagName('script')[0];
+        sm.src = url;
+        s.parentNode.insertBefore(sm, s);
+        // 页面加载时初始化并加载验证码
+        initSMCaptcha({
+            organization: 'IY3HadrRSlgwwKWo63gi', // 替换为你的组织ID
+            appendTo: captchaId,
+            appId: "Yiban_Web",
+            mode: "spatial_select",
+            autoShow: true // 页面加载时自动弹出验证码
+        }, function (SMCaptcha) {
+            const captchaUuid = SMCaptcha.captchaUuid;
+            // 验证码校验情况回调
+            SMCaptcha.onSuccess(function (data) {
+                // data格式：{rid: '2017080810405655b3377d25de478233', pass: false}
+                console.log(data);
+                if (data.pass) {
+                    dealSmDeviceId(function (deviceId) {
+
+                        console.log(`data: {"rid": "${data['rid']}","deviceId":"${deviceId}"}`)
+                        // data.innerText = `{"rid": "${data['rid']}","deviceId":"${deviceId}"}`
+                 const resultJson = `{"rid": "${data['rid']}","yt":"${deviceId}"}`;
+
+                        // 打印到控制台
+                        console.log(`data: ${resultJson}`);
+
+                        // 创建一个新的元素，ID 为 'data'
+                        const dataElement = document.createElement('div');
+                        dataElement.id = 'data';
+                        dataElement.innerText = resultJson;
+
+                        // 将新元素注入到页面中
+                        document.body.appendChild(dataElement);
+
+                    });
+                } else {
+                    // 验证失败后
+
+                }
+            });
+        });
+    });
+</script>
+<style>
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+    }
+
+    #shumei_captcha_wrapper {
+
+        width: 500px;
+    }
+</style>
+</body>
+</html>
