@@ -1,11 +1,11 @@
 import json
-import os.path
+import os
 import time
 from datetime import datetime
 
 import requests
 from husky_spider_utils import SeleniumSession
-from loguru import logger
+from utils.logging_utils import logger
 
 
 class SyiBan:
@@ -175,7 +175,7 @@ class SyiBan:
 
     def post(self, ds_api_key, post_type="学校-西南科技大学", post_board="默认板块",
              title_pre="【计算机科学与技术学院】"):
-        from ai_model import AIModel
+        from utils.ai_model import AIModel
         logger.info("AI描写文章中...")
         ai = AIModel(ds_api_key, self.get_topic())
         res = ai.chat()
@@ -228,54 +228,27 @@ class SyiBan:
             res = self.session.post("https://s.yiban.cn/api/post/web", json=payload)
 
         if res.json()['code'] == "200":
-            logger.success(f"{res.json()['message']}")
+            logger.info(f"{res.json()['message']}")
             posts = self.get_post_list(offset=0, count=10)
             post = posts['list'][0]
-            logger.success(f"{post['title']}")
-            logger.success(f"{post['url']}")
+            logger.info(f"{post['title']}")
+            logger.info(f"{post['url']}")
             post_time = float(post['updateTime'])
             dt = datetime.fromtimestamp(post_time)
             formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S")
-            logger.success(f"{formatted_time}")
+            logger.info(f"{formatted_time}")
             if not os.path.exists("output.txt"):
-                with open("output.txt", "w", encoding="utf-8") as f:
+                with open("./data/output.txt", "w", encoding="utf-8") as f:
                     f.write("")
-            with open("output.txt", "a", encoding="utf-8") as f:
+            with open("./data/output.txt", "a", encoding="utf-8") as f:
                 f.write(f"""
 ------------------------------------------------------------------------
 标题: {title}\n时间: {formatted_time}\n链接: {post['url']}
 ------------------------------------------------------------------------""")
-            return post
+            return {
+                "time": formatted_time,
+                "title": title,
+                "url": post['url'],
+            }
         else:
             logger.error(f"{res.json()['message']}")
-
-
-if __name__ == '__main__':
-    # 运行控制逻辑
-    try:
-        run_times = int(input("请输入脚本运行次数（1-3，默认1）: ") or 1)
-        run_times = max(1, min(run_times, 10))  # 强制限制在1-3范围内
-    except ValueError:
-        run_times = 1
-        logger.warning("输入无效，使用默认值1")
-
-    yiban = SyiBan("", "", driver_type="chrome")
-    # 带延时的执行循环
-    for i in range(run_times):
-        logger.info(f"开始第 {i + 1}/{run_times} 次发帖操作")
-        yiban.post(
-            "",
-            post_type="学院-计算机科学与技术学院",
-            post_board="默认板块",
-            title_pre="【计算机科学与技术学院】"
-        )
-
-        # 最后一次不等待
-        if i < run_times - 1:
-            logger.warning("由于易班发帖限制，70秒后继续下一次发帖...")
-            for remaining in range(70, 0, -1):
-                logger.info(f"剩余等待时间: {remaining}秒")
-                time.sleep(1)
-            logger.success("等待结束，继续执行下一个任务")
-
-    logger.success("所有发帖任务已完成！")

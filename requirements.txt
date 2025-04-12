@@ -1,6 +1,7 @@
 husky_spider_utils==0.1.4
-loguru==0.7.3
 openai==1.73.0
 pycryptodome==3.22.0
+PyQt5==5.15.11
+PyQt5_sip==12.17.0
 Requests==2.32.3
 parsel
