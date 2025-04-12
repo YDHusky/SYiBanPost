@@ -1,13 +1,11 @@
 import time
 from datetime import datetime
-
 from husky_spider_utils import SeleniumSession
 from loguru import logger
 
-
 class SyiBan:
     base_url = "https://www.yiban.cn/login?go=https%3A%2F%2Fwww.yiban.cn%2F"
-
+    
     def __init__(self, username, password, driver_type="firefox"):
         self.session = SeleniumSession(selenium_init_url=self.base_url, driver_type=driver_type)
         self.username = username
@@ -121,7 +119,6 @@ class SyiBan:
         logger.info(f"文章内容: {content}")
         org_id = self.get_my_orgs(post_type)
         board_id = self.get_board(org_id, post_board)
-
         while self.get_post_name(title):
             res = ai.chat()
             title = title_pre + res['title']
@@ -159,11 +156,33 @@ class SyiBan:
         else:
             logger.error(f"{res.json()['message']}")
 
-
 if __name__ == '__main__':
-    # 第一个参数填账号, 第二个参数填密码, 第三个参数填电脑已配的selenium(支持chrome,firefox,edge)
-    yiban = SyiBan("", "", driver_type="firefox")
-    # 第一个参数填DeepSeek apikey(可去官网申请) post_type使用类型-板块 比如学院发帖(计算机科学与技术学院)就是 学院-计算机科学与技术学院 post_board是类型 比如 默认板块 校园大杂烩 title_pre是标题前缀
-    # post_type 和 post_board的填写均需与官网靠齐
-    yiban.post("", post_type="学校-西南科技大学", post_board="默认板块",
-               title_pre="【计算机科学与技术学院】")
+    # 运行控制逻辑
+    try:
+        run_times = int(input("请输入脚本运行次数（1-3，默认1）: ") or 1)
+        run_times = max(1, min(run_times, 3))  # 强制限制在1-3范围内
+    except ValueError:
+        run_times = 1
+        logger.warning("输入无效，使用默认值1")
+
+    yiban = SyiBan("", "", driver_type="chrome")
+    
+    # 带延时的执行循环
+    for i in range(run_times):
+        logger.info(f"开始第 {i+1}/{run_times} 次发帖操作")
+        yiban.post(
+            "",
+            post_type="学院-经济管理学院",
+            post_board="默认板块",
+            title_pre="【经济管理学院】"
+        )
+        
+        # 最后一次不等待
+        if i < run_times - 1:
+            logger.warning("由于易班发帖限制，70秒后继续下一次发帖...")
+            for remaining in range(70, 0, -1):
+                logger.info(f"剩余等待时间: {remaining}秒")
+                time.sleep(1)
+            logger.success("等待结束，继续执行下一个任务")
+
+    logger.success("所有发帖任务已完成！")
